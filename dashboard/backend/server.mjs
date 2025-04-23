@@ -14,6 +14,26 @@ const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_TABLE_NAME = process.env.SUPABASE_TABLE_NAME;
 const SUPABASE_TOKEN = process.env.SUPABASE_TOKEN;
 
+app.get("/api/getcredentials", (req, res) => {
+  const authToken = req.headers["x-api-key"];
+
+  if (authToken !== process.env.CREDS_API_KEY) {
+    return res.status(403).json({ error: "Unauthorized access" });
+  }
+
+  const username = process.env.EMAIL;
+  const password = process.env.PASSWORD;
+
+  if (!username || !password) {
+    return res
+      .status(500)
+      .json({ error: "Credentials not set in environment variables" });
+  }
+
+  return res.status(200).json({ username, password });
+});
+
+
 app.post("/api/verifycredentials", async (req, res) => {
   const { username, password } = req.body;
 
