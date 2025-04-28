@@ -13,6 +13,30 @@ const PORT = process.env.PORT || 5000;
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_TABLE_NAME = process.env.SUPABASE_TABLE_NAME;
 const SUPABASE_TOKEN = process.env.SUPABASE_TOKEN;
+const S3_BUCKET_URL =
+  process.env.S3_BUCKET_URL ||
+  "https://fusion-networks-qa-dev.s3.eu-west-2.amazonaws.com";
+// Health check endpoint
+app.get("/api/health", (req, res) => {
+  res.status(200).json({ status: "OK" });
+});
+// S3 Proxy Endpoint
+app.get("/api/proxy/merged-results", async (req, res) => {
+  try {
+    const response = await fetch(`${S3_BUCKET_URL}/merged-results.json`);
+    if (!response.ok) {
+      throw new Error(`S3 request failed with status ${response.status}`);
+    }
+    const data = await response.json();
+    res.json(data);
+  } catch (error) {
+    console.error("S3 Proxy Error:", error);
+    res.status(500).json({
+      error: "Failed to fetch data from S3",
+      details: error.message,
+    });
+  }
+});
 
 app.get("/api/getcredentials", (req, res) => {
   const authToken = req.headers["x-api-key"];
@@ -32,7 +56,6 @@ app.get("/api/getcredentials", (req, res) => {
 
   return res.status(200).json({ username, password });
 });
-
 
 app.post("/api/verifycredentials", async (req, res) => {
   const { username, password } = req.body;
