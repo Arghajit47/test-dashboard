@@ -39,6 +39,23 @@ app.get("/api/proxy/merged-results", async (req, res) => {
   }
 });
 
+app.get("/api/proxy/baselineList", async (req, res) => {
+  try {
+    const response = await fetch(`${S3_BUCKET_URL}/merged.txt`);
+    if (!response.ok) {
+      throw new Error(`S3 request failed with status ${response.status}`);
+    }
+    const data = await response.json();
+    res.json(data);
+  } catch (error) {
+    console.error("S3 Proxy Error:", error);
+    res.status(500).json({
+      error: "Failed to fetch data from S3",
+      details: error.message,
+    });
+  }
+});
+
 app.get("/api/getcredentials", (req, res) => {
   const authToken = req.headers["x-api-key"];
 
