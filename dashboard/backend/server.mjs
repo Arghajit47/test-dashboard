@@ -45,8 +45,10 @@ app.get("/api/proxy/baselineList", async (req, res) => {
     if (!response.ok) {
       throw new Error(`S3 request failed with status ${response.status}`);
     }
-    const data = await response.json();
-    res.json(data);
+
+    const textData = await response.text(); // ✅ This works for .txt files
+
+    res.send(textData); // or res.json({ data: textData }) if wrapping needed
   } catch (error) {
     console.error("S3 Proxy Error:", error);
     res.status(500).json({
@@ -55,6 +57,7 @@ app.get("/api/proxy/baselineList", async (req, res) => {
     });
   }
 });
+
 
 app.get("/api/getcredentials", (req, res) => {
   const authToken = req.headers["x-api-key"];
