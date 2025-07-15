@@ -25,14 +25,22 @@ const DATABASE_URL = process.env.S3_DATABASE_URL;
 const LIGHTHOUSE_DB_URL = process.env.LIGHTHOUSE_DB_URLS
   ? process.env.LIGHTHOUSE_DB_URLS.split(",").map((url) => url.trim())
   : [
-      `${DATABASE_URL}/lighthouse_performance_Auth.db`,
-      `${DATABASE_URL}/lighthouse_performance_UnAuth.db`,
+      `${DATABASE_URL}/lighthouse_performance_1.db`,
+      `${DATABASE_URL}/lighthouse_performance_2.db`,
+      `${DATABASE_URL}/lighthouse_performance_3.db`,
+      `${DATABASE_URL}/lighthouse_performance_4.db`,
       `${DATABASE_URL}/lighthouse_performance.db`,
     ];
 
 const VISUAL_DB_URL = process.env.VISUAL_DB_URLS
   ? process.env.VISUAL_DB_URLS.split(",").map((url) => url.trim())
-  : [`${DATABASE_URL}/visual_desktop.db`, `${DATABASE_URL}/visual_mobile.db`];
+  : [
+      `${DATABASE_URL}/visual_5.db`,
+      `${DATABASE_URL}/visual_6.db`,
+      `${DATABASE_URL}/visual_7.db`,
+      `${DATABASE_URL}/visual_8.db`,
+      `${DATABASE_URL}/visual_9.db`,
+    ];
 
 // Paths to save the databases on the server instance's temporary disk
 const LIGHTHOUSE_DB_PATH = path.join("/tmp", "lighthouse_performance.db");
