@@ -709,7 +709,7 @@ app.post("/api/proxy-image", async (req, res) => {
 
     const response = await fetch(fullUrl, {
       headers: {
-        Authorization: `Bearer ${GITLAB_TOKEN}`,
+        Authorization: `Bearer ${process.env.GITLAB_TOKEN}`,
         "User-Agent": "Test-Dashboard-Proxy/1.0",
       },
     });
