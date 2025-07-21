@@ -697,17 +697,17 @@ app.post("/api/proxy-image", async (req, res) => {
 
     // Convert relative path to full URL if needed
     let fullUrl = imageUrl;
-    fullUrl = imageUrl.replace("networks//", "networks/screenshots/");
     if (imageUrl.startsWith("../pei-qa-artifacts/")) {
       fullUrl = imageUrl.replace(
         "../pei-qa-artifacts/",
         "https://pei-networks-qa-cd00b6.gitlab.io/"
       );
     }
+    const replacedUrl = fullUrl.replace("networks//", "networks/screenshots/");
 
-    console.log(`🔗 Full URL: ${fullUrl}`);
+    console.log(`🔗 Full URL: ${replacedUrl}`);
 
-    const response = await fetch(fullUrl, {
+    const response = await fetch(replacedUrl, {
       headers: {
         Authorization: `Bearer ${process.env.GITLAB_TOKEN}`,
         "User-Agent": "Test-Dashboard-Proxy/1.0",
