@@ -785,55 +785,59 @@ app.get("/api/visual/data", (req, res) => {
   }
 
   try {
+    // Check if visual_matrix table exists
     const tables = visualDb
       .prepare(
-        `SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'`
+        `SELECT name FROM sqlite_master WHERE type='table' AND name = 'visual_matrix'`
       )
       .all();
-    console.log(
-      `📋 Found ${tables.length} tables in visual database: ${tables
-        .map((t) => t.name)
-        .join(", ")}`
-    );
+
+    if (tables.length === 0) {
+      console.log("❌ visual_matrix table not found");
+      return res
+        .status(404)
+        .json({ error: "visual_matrix table not found in database" });
+    }
+
+    console.log("📋 Found visual_matrix table in visual database");
 
     let allData = [];
     let totalRecords = 0;
 
-    for (const table of tables) {
-      try {
-        const tableInfo = visualDb
-          .prepare(`PRAGMA table_info(${table.name})`)
-          .all();
-        const hasCreatedAt = tableInfo.some(
-          (col) => col.name.toLowerCase() === "created_at"
-        );
+    try {
+      const tableInfo = visualDb
+        .prepare(`PRAGMA table_info(visual_matrix)`)
+        .all();
+      const hasCreatedAt = tableInfo.some(
+        (col) => col.name.toLowerCase() === "created_at"
+      );
 
-        let query;
-        if (hasCreatedAt) {
-          query = `SELECT * FROM ${table.name} ORDER BY created_at DESC`;
+      let query;
+      if (hasCreatedAt) {
+        query = `SELECT * FROM visual_matrix ORDER BY created_at DESC`;
+      } else {
+        const hasId = tableInfo.some((col) => col.name.toLowerCase() === "id");
+        if (hasId) {
+          query = `SELECT * FROM visual_matrix ORDER BY id DESC`;
         } else {
-          const hasId = tableInfo.some(
-            (col) => col.name.toLowerCase() === "id"
-          );
-          if (hasId) {
-            query = `SELECT * FROM ${table.name} ORDER BY id DESC`;
-          } else {
-            query = `SELECT * FROM ${table.name}`;
-          }
+          query = `SELECT * FROM visual_matrix`;
         }
-
-        const stmt = visualDb.prepare(query);
-        const data = stmt.all();
-        allData.push(...data);
-        totalRecords += data.length;
-        console.log(`📊 Retrieved ${data.length} records from ${table.name}`);
-      } catch (error) {
-        console.error(`❌ Error querying visual table ${table.name}:`, error);
       }
+
+      const stmt = visualDb.prepare(query);
+      const data = stmt.all();
+      allData.push(...data);
+      totalRecords += data.length;
+      console.log(`📊 Retrieved ${data.length} records from visual_matrix`);
+    } catch (error) {
+      console.error(`❌ Error querying visual_matrix table:`, error);
+      return res
+        .status(500)
+        .json({ error: "Failed to query visual_matrix table" });
     }
 
     console.log(
-      `📊 Visual API call: Retrieved ${totalRecords} total records from ${tables.length} tables`
+      `📊 Visual API call: Retrieved ${totalRecords} records from visual_matrix table`
     );
 
     // Remove duplicates based on test name - keep the most recent record for each unique test name
@@ -945,7 +949,7 @@ app.get("/api/visual/data", (req, res) => {
     });
 
     console.log(
-      `📊 Visual API call completed: ${uniqueData.length} unique records after duplicate removal`
+      `📊 Visual API call completed: ${uniqueData.length} unique records from visual_matrix after duplicate removal`
     );
 
     // Log the unique test names for debugging
