@@ -697,6 +697,7 @@ app.post("/api/proxy-image", async (req, res) => {
 
     // Convert relative path to full URL if needed
     let fullUrl = imageUrl;
+    fullUrl = imageUrl.replace("networks//", "networks/screenshots/");
     if (imageUrl.startsWith("../pei-qa-artifacts/")) {
       fullUrl = imageUrl.replace(
         "../pei-qa-artifacts/",
