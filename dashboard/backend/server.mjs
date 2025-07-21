@@ -682,6 +682,64 @@ app.post("/api/verifycredentials", async (req, res) => {
     .json({ error: "Invalid username or password", isAuthenticated: false });
 });
 
+// Image Proxy Endpoint - NEW
+app.post("/api/proxy-image", async (req, res) => {
+  console.log("🖼️ Image proxy request received");
+
+  try {
+    const { imageUrl } = req.body;
+
+    if (!imageUrl) {
+      return res.status(400).json({ error: "imageUrl is required" });
+    }
+
+    console.log(`🖼️ Proxying image: ${imageUrl}`);
+
+    // Convert relative path to full URL if needed
+    let fullUrl = imageUrl;
+    if (imageUrl.startsWith("../pei-qa-artifacts/")) {
+      fullUrl = imageUrl.replace(
+        "../pei-qa-artifacts/",
+        "https://pei-networks-qa-cd00b6.gitlab.io/"
+      );
+    }
+
+    console.log(`🔗 Full URL: ${fullUrl}`);
+
+    const response = await fetch(fullUrl, {
+      headers: {
+        Authorization: `Bearer ${GITLAB_TOKEN}`,
+        "User-Agent": "Test-Dashboard-Proxy/1.0",
+      },
+    });
+
+    if (!response.ok) {
+      console.error(
+        `❌ Failed to fetch image: ${response.status} ${response.statusText}`
+      );
+      return res.status(response.status).json({
+        error: `Failed to fetch image: ${response.status} ${response.statusText}`,
+      });
+    }
+
+    // Get the content type
+    const contentType =
+      response.headers.get("content-type") || "application/octet-stream";
+
+    // Set appropriate headers
+    res.setHeader("Content-Type", contentType);
+    res.setHeader("Cache-Control", "public, max-age=3600"); // Cache for 1 hour
+
+    // Stream the image data
+    response.body.pipe(res);
+
+    console.log(`✅ Successfully proxied image: ${contentType}`);
+  } catch (error) {
+    console.error("❌ Image proxy error:", error);
+    res.status(500).json({ error: "Failed to proxy image" });
+  }
+});
+
 // Supabase Data Endpoint (from original)
 app.get("/api/supabase/data", async (req, res) => {
   try {
@@ -1191,7 +1249,7 @@ async function startServer() {
     console.log(`📡 API endpoints available:`);
     console.log(`   - GET  /api/health                    - Health check`);
     console.log(
-      `   - GET  /api/proxy/merged-results      - S3 proxy for merged results`
+      `   - POST /api/proxy-image               - Image proxy for screenshots`
     );
     console.log(
       `   - POST /api/verifycredentials         - Verify credentials (original)`
@@ -1209,6 +1267,9 @@ async function startServer() {
     console.log(`   - GET  /api/visual/data               - Get visual data`);
     console.log(
       `   - GET  /api/visual/stats              - Get visual database statistics`
+    );
+    console.log(
+      `   - GET  /api/baseline/data             - Get baseline screenshot paths`
     );
     console.log(
       `   - POST /api/refresh                   - Manual refresh all databases`
