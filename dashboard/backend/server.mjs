@@ -644,6 +644,40 @@ app.get("/api/health", (req, res) => {
   res.status(200).json({ status: "OK" });
 });
 
+
+/**
+ * GET /api/getcredentials
+ * Returns stored credentials (username & password) if the caller provides the correct API key.
+ *
+ * @route {GET} /api/getcredentials
+ * @param {Object} req  - Express request object
+ * @param {Object} req.headers - Request headers
+ * @param {string} req.headers - ["x-api-key"] - API key used for authorization
+ * @param {Object} res  - Express response object
+ *
+ * @returns {Object} 200 - Credentials object { username, password }
+ * @returns {Object} 403 - Unauthorized access error
+ * @returns {Object} 500 - Server error if credentials are not configured
+ */
+app.get("/api/getcredentials", (req, res) => {
+  const authToken = req.headers["x-api-key"];
+
+  if (authToken !== process.env.CREDS_API_KEY) {
+    return res.status(403).json({ error: "Unauthorized access" });
+  }
+
+  const username = process.env.EMAIL;
+  const password = process.env.PASSWORD;
+
+  if (!username || !password) {
+    return res
+      .status(500)
+      .json({ error: "Credentials not set in environment variables" });
+  }
+
+  return res.status(200).json({ username, password });
+});
+
 // Authentication Endpoint (Updated for Two-Tier Users)
 app.post("/api/verifycredentials", async (req, res) => {
   const { username, password } = req.body;
