@@ -865,6 +865,65 @@ app.get("/api/lighthouse/stats", (req, res) => {
   }
 });
 
+// HTML Proxy Endpoint - NEW
+app.post("/api/proxy-html", async (req, res) => {
+  console.log("📄 HTML proxy request received");
+
+  try {
+    const { reportUrl } = req.body;
+
+    if (!reportUrl) {
+      return res.status(400).json({ error: "reportUrl is required" });
+    }
+
+    console.log(`📄 Proxying HTML: ${reportUrl}`);
+
+    let fullUrl = reportUrl;
+    if (reportUrl.startsWith("../pei-qa-artifacts/")) {
+      fullUrl = reportUrl.replace(
+        "../pei-qa-artifacts/",
+        "https://pei-networks-qa-cd00b6.gitlab.io/"
+      );
+    }
+
+    if (fullUrl.includes("/-/blob/")) {
+      fullUrl = fullUrl.replace("/-/blob/", "/-/raw/");
+      console.warn("⚠️ Converted '/-/blob/' to '/-/raw/'");
+    }
+
+    console.log(`🔗 Full URL: ${fullUrl}`);
+
+    const response = await fetch(fullUrl, {
+      headers: {
+        Authorization: `Bearer ${process.env.GITLAB_TOKEN}`,
+        "User-Agent": "Test-Dashboard-Proxy/1.0",
+      },
+    });
+
+    if (!response.ok) {
+      console.error(
+        `❌ Failed to fetch HTML: ${response.status} ${response.statusText}`
+      );
+      return res.status(response.status).json({
+        error: `Failed to fetch HTML: ${response.status} ${response.statusText}`,
+      });
+    }
+
+    const contentType =
+      response.headers.get("content-type") || "text/html; charset=utf-8";
+
+    res.setHeader("Content-Type", contentType);
+    res.setHeader("Cache-Control", "public, max-age=3600");
+
+    response.body.pipe(res);
+
+    console.log(`✅ Successfully proxied HTML report: ${contentType}`);
+  } catch (error) {
+    console.error("❌ HTML proxy error:", error);
+    res.status(500).json({ error: "Failed to proxy HTML" });
+  }
+});
+
 // --- VISUAL API ROUTES ---
 
 app.get("/api/visual/data", (req, res) => {
@@ -1305,6 +1364,9 @@ async function startServer() {
     );
     console.log(
       `   - GET  /api/baseline/data             - Get baseline screenshot paths`
+    );
+    console.log(
+      `   - POST /api/proxy-html                - Proxy HTML content from GitLab`
     );
     console.log(
       `   - POST /api/refresh                   - Manual refresh all databases`
